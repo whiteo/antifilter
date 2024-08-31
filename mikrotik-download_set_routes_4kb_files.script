@@ -1,0 +1,71 @@
+:local addressList "ADDRESS LIST NAME";
+:local hostUrlBase "LINK TO FILES";
+:local fileCount "COUNT OF FILES";
+
+:log info "Starting file download and processing.";
+
+:for i from=1 to=$fileCount do={
+    :local scriptName ("anti_block_" . $i . ".txt");
+    :local hostUrl ($hostUrlBase . $i . ".txt");
+    
+    :log info ("Downloading file: " . $scriptName);
+    
+    :do {
+        :if ([:len [/file find name=$scriptName]] > 0) do={
+            /file remove [find name=$scriptName];
+            :log info ("Old file " . $scriptName . " has been deleted.");
+        }
+        
+        /tool fetch check-certificate=no mode=https url=$hostUrl dst-path=$scriptName;
+        :delay 2s;
+        
+        :if ([:len [/file find name=$scriptName]] > 0) do={
+            :local file [/file get [find name=$scriptName] contents];
+            
+            :log info ("Processing file: " . $scriptName);
+            
+            :local contentLen [:len $file];
+            :local lineEnd 0;
+            :local line "";
+            :local lastEnd 0;
+
+            :while ($lineEnd < $contentLen) do={
+                :set lineEnd [:find $file "\n" $lastEnd];
+                :if ($lineEnd = -1) do={
+                    :set lineEnd $contentLen;
+                }
+                
+                :set line [:pick $file $lastEnd $lineEnd];
+                :set lastEnd ($lineEnd + 1);
+                
+                :if ($line != "") do={
+                    :if ([:find $line "\r" -1] > 0) do={
+                        :set line [:pick $line 0 ([:len $line] - 1)];
+                    }
+                    :if ([:find $line "\n" -1] > 0) do={
+                        :set line [:pick $line 0 ([:len $line] - 1)];
+                    }
+                    
+                    :local existingAddress [/ip firewall address-list find list=$addressList address=$line];
+                    :if ([:len $existingAddress] = 0) do={
+                        /ip firewall address-list add list=$addressList address=$line comment=$addressList;
+                        :log info ("Address " . $line . " added to list " . $addressList . ".");
+                    } else={
+                        :log warning ("Address " . $line . " already exists in list, skipping.");
+                    }
+                }
+            }
+        } else={
+            :log warning ("Failed to download or the content is empty for file: " . $scriptName);
+        }
+    } on-error={
+        :log warning ("File download or processing failed for file: " . $scriptName);
+    }
+    
+    :if ([:len [/file find name=$scriptName]] > 0) do={
+        /file remove [find name=$scriptName];
+        :log info ("File " . $scriptName . " has been deleted.");
+    }
+}
+
+:log info "All files have been processed.";
