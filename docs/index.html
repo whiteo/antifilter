@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Antifilter area</title>
     <style>
-        body {
+		body {
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
             margin: 0;
@@ -14,6 +14,7 @@
             justify-content: center;
             align-items: center;
             height: 100vh;
+            flex-direction: column;
         }
 
         .container {
@@ -58,6 +59,27 @@
             white-space: pre-wrap;
             text-align: left;
         }
+		
+		.footer {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .footer img {
+            width: 24px;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        .footer a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -96,6 +118,13 @@
 		<div class="output" id="output"></div>
     </div>
 
+    <div class="footer">
+        <a href="https://github.com/whiteo/antifilter" target="_blank">
+            <img src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub logo">
+            GitHub Repository
+        </a>
+    </div>
+	
     <script>
         async function get() {
 			const fileUrls = {
