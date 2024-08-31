@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Antifilter area</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        select, input[type="text"], input[type="number"] {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .output {
+            margin-top: 20px;
+            color: green;
+            white-space: pre-wrap;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Antifilter area</h1>
+        RSC FILE = MIKROTIK FILE - UNBINDED GATEWAY<br>
+		RSC_P FILE = MIKROTIK FILE - UNBINDED GATEWAY AND UNBINDED DISTANCE
+
+        <form id="form">
+		    <select id="type">
+                <option value="" disabled selected>Select type</option>
+                <option value="RSC FILE">RSC FILE</option>
+                <option value="RSC_P FILE">RSC_P FILE</option>
+            </select>
+            <select id="list">
+                <option value="" disabled selected>Select list</option>
+                <option value="RKN">RKN</option>
+                <option value="META">META</option>
+                <option value="X">X</option>
+				<option value="AMAZON-CLOUD">AMAZON-CLOUD</option>
+				<option value="MICROSOFT">MICROSOFT</option>
+				<option value="AMAZON">AMAZON</option>
+				<option value="OPEN-AI">OPEN-AI</option>
+				<option value="YOUTUBE">YOUTUBE</option>
+				<option value="GOOGLE">GOOGLE</option>
+				<option value="TELEGRAM">TELEGRAM</option>
+            </select>
+			
+			<input type="number" id="distance" placeholder="Distance" max="255" min="0" maxlength="3" step="1">
+
+            <input type="text" id="gw" placeholder="Gateway"><br>
+
+            <button type="button" onclick="get()">Get file</button>
+        </form>
+		
+		<div class="output" id="output"></div>
+    </div>
+
+    <script>
+        async function get() {
+			const fileUrls = {
+				"RSC FILE": "https://raw.githubusercontent.com/whiteo/antifilter/main/rsc/",
+				"RSC_P FILE": "https://raw.githubusercontent.com/whiteo/antifilter/main/rsc/p/"
+			};
+		
+		    const outputDiv = document.getElementById("output");
+		    const type = document.getElementById("type").value;
+            const list = document.getElementById("list").value;
+            const distance = document.getElementById("distance").value;
+            const gw = document.getElementById("gw").value;
+
+			let error = false;
+			let result = "";
+
+            if (!type) {
+                result += "Type not selected.<br>";
+				error = true;
+            }
+			
+            if (!list) {
+                result += "List not selected.<br>";
+				error = true;
+            }
+
+            if (type === "RSC_P FILE" && !distance) { 
+                result += "Distance not selected.<br>";
+				error = true;
+            }
+
+            if (!gw) {
+                result += "The gateway not selected.<br>";
+				error = true;
+            }
+
+			if (type && list && !error) {
+			    let fileUrl = fileUrls[type] + (type === "RSC FILE" ? list + ".rsc" : list + "_p.rsc");
+				
+				try {
+                    const response = await  fetch(fileUrl);
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    let fileContent = await response.text();
+					
+					if (gw && fileContent) {
+                        fileContent = fileContent.replace(/YOUR_GW/g, gw);
+                    }
+					
+					if (type === "RSC_P FILE" && distance && fileContent) { 
+						fileContent = fileContent.replace(/YOUR_DISTANCE/g, distance);
+					}
+
+					if (fileContent) { 
+						const blob = new Blob([fileContent], { type: 'text/plain' });
+						const url = URL.createObjectURL(blob);
+						const fileName = list + (type === "RSC FILE" ? ".rsc" : "_p.rsc");
+						
+						const downloadLink = document.createElement('a');
+						downloadLink.href = url;
+						downloadLink.download = fileName;
+                    
+						document.body.appendChild(downloadLink);
+						downloadLink.click();
+						document.body.removeChild(downloadLink);
+					}
+                } catch (error) {
+                    result += "Network response was not ok";
+                }
+			}
+			
+			outputDiv.innerHTML = result;
+						
+        }
+    </script>
+</body>
+</html>
